@@ -18,7 +18,7 @@ class AudioPlayerManager {
           buffered: playbackEvent.bufferedPosition,
           total: playbackEvent.duration,
         ));
-    homeController.player.setAsset(url);
+    // homeController.player.setFilePath(url);
   }
 
   void dispose() {

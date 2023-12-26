@@ -40,7 +40,8 @@ class _TabScreenState extends State<TabScreen> {
           bottom: const TabBar(
             indicatorSize: TabBarIndicatorSize.tab,
             unselectedLabelColor: Colors.white,
-            indicatorColor: Colors.white,
+            indicatorColor: Colors.black,
+            labelColor: Colors.amber,
             tabs: [
               Tab(text: "Audio"),
               Tab(text: "Video"),

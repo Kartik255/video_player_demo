@@ -36,15 +36,31 @@ class _VideoScreenState extends State<VideoScreen> {
                 ? const Center(
                     child: Text("No Data Found!", style: TextStyle(color: Colors.blue)),
                   )
-                : ListView.builder(
-                    itemCount: controller.listToShowVideoThumb.length,
-                    itemBuilder: (context, index) => ListTile(
-                      title: Image.memory(controller.listToShowVideoThumb[index]),
-                      onTap: () => Get.to(
-                        () => VideoPreviewScreen(videoUrl: controller.listToShowVideo[index].path),
+                : Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ListView.builder(
+                      itemCount: controller.listToShowVideoThumb.length,
+                      itemBuilder: (context, index) => Card(
+                        elevation: 5,
+                        child: ListTile(
+                          leading: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Image.memory(controller.listToShowVideoThumb[index]),
+                          ),
+                          title: Text(controller.listToShowVideo[index].path.split('/').last),
+                          trailing: InkWell(
+                            onTap: () => Get.to(
+                                  () => VideoPreviewScreen(videoUrl: controller.listToShowVideo[index].path),
+                            ),
+                            child: CircleAvatar(
+                              backgroundColor: Colors.blue.withOpacity(0.2),
+                              child: const Icon(Icons.play_arrow),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  );
+                );
       },
     );
   }
