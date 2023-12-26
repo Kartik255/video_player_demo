@@ -10,31 +10,40 @@ class AudioScreen extends StatefulWidget {
 }
 
 class _AudioScreenState extends State<AudioScreen> {
-
   HomeController homeController = Get.put(HomeController());
-/*
+
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
 
-    homeController.requestPermissions();
-  }*/
+    homeController.permissionManage();
+  }
+
   @override
   Widget build(BuildContext context) {
     return GetBuilder(
       builder: (HomeController controller) {
         return controller.isLoading
-            ? const CircularProgressIndicator()
-            : ListView.builder(
-                itemCount: controller.audioFiles.length,
-                itemBuilder: (context, index) => ListTile(
-                  title: Text(controller.audioFiles[index].path),
-                  onTap: () {
-                    // Implement audio playback logic here
-                  },
-                ),
-              );
+            ? Container(
+                alignment: Alignment.center,
+                height: 100,
+                width: 100,
+                child: const CircularProgressIndicator(),
+              )
+            : controller.listToShowAudio.isEmpty
+                ? const Center(
+                    child: Text("No Data Found!", style: TextStyle(color: Colors.blue)),
+                  )
+                : ListView.builder(
+                    itemCount: controller.listToShowAudio.length,
+                    itemBuilder: (context, index) => ListTile(
+                      title: Text(controller.listToShowAudio[index].path),
+                      onTap: () {
+                        // Implement audio playback logic here
+                      },
+                    ),
+                  );
       },
     );
   }

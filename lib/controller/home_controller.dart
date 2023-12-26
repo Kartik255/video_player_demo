@@ -1,111 +1,126 @@
 import 'dart:io';
+import 'dart:typed_data';
 
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:get/get.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 
 class HomeController extends GetxController {
-  List<FileSystemEntity> audioFiles = [];
   bool isLoading = false;
+  final Directory _photoDirLong = Directory('/storage/emulated/0/Download');
+  final Directory _photoDir = Directory('/storage/emulated/0/Download');
+  List<FileSystemEntity> datalist = [];
+  Permission storagePermission = Permission.audio;
+  Permission manageStoragePermission = Permission.manageExternalStorage;
+  Directory finalDirectory = Directory("");
+  String tempPath = "";
+  List<FileSystemEntity> listToShowAudio = [];
+  List<FileSystemEntity> listToShowVideo = [];
+  List<Uint8List> listToShowVideoThumb = [];
 
-  //  requestPermission() async {
-  //   var status = await Permission.storage.request();
-  //   if (status.isGranted) {
-  //     getFiles();
-  //   } else{
-  //     requestPermission();
-  //   }
-  // }
-
-  // Future<void> requestPermissions() async {
-  //   Map<Permission, PermissionStatus> statuses = await[
-  //     Permission.audio,
-  //     Permission.videos,
-  //   ].request();
-  //   print("Permission:: ${statuses[Permission.audio]}");
-  //   print("Permission:: ${statuses[Permission.videos]}");
-  //   if (Platform.isAndroid) {
-  //     final androidInfo = await DeviceInfoPlugin().androidInfo;
-  //     print("Permission::${androidInfo.version.sdkInt} ");
-  //     if (statuses[Permission.audio] != PermissionStatus.granted) {
-  //       print("permission:: Denied");
-  //       // requestPermissions();
-  //     } else {
-  //       // getFiles();
-  //       print("permission:: Granted");
-  //     }
-  //   }
-  // }
-
-  Future<bool> requestPermissions(Permission setting) async {
-    // setting.request() will return the status ALWAYS
-    // if setting is already requested, it will return the status
-    // final _result = await setting.request();
-    // if(Platform.isAndroid){
-    //   switch (_result) {
-    //     case PermissionStatus.granted:
-    //     case PermissionStatus.limited:
-    //       return getFiles();
-    //     case PermissionStatus.denied:
-    //     case PermissionStatus.restricted:
-    //     case PermissionStatus.permanentlyDenied:
-    //       return requestPermissions(Permission.audio);
-    //     case PermissionStatus.provisional:
-    //       // TODO: Handle this case.
-    //   }
-    // }
-      bool permissionGranted = false;
-      DeviceInfoPlugin plugin = DeviceInfoPlugin();
-      AndroidDeviceInfo android = await plugin.androidInfo;
-
-      if (android.version.sdkInt < 33) {
-        if (await Permission.storage.request().isGranted) {
-          permissionGranted = true;
-        } else if (await Permission.storage.request().isPermanentlyDenied) {
-          Map<Permission, PermissionStatus> statuses = await [
-            Permission.storage,
-          ].request();
-
-          if(statuses[Permission.storage]!.isGranted){
-            permissionGranted = true;
-          }else{
-            permissionGranted = false;
-            await openAppSettings();
-          }
-        }
-      } else {
-        permissionGranted = true;
-        getFiles();
+  permissionManage() async {
+    isLoading = true;
+    [
+      Permission.audio,
+      Permission.videos,
+    ].request().then((value) async {
+      if (await _photoDir.exists()) {
+        tempPath = _photoDir.path;
+        print("_photoDir.path :: ${_photoDir.path}");
+        print("_photoDir.path :: ${tempPath}");
+        fetchData();
+      } else if (await _photoDirLong.exists()) {
+        manageStoragePermission.request().then((value) async {
+          tempPath = _photoDirLong.path;
+          print("_photoDirLong.path :: ${_photoDirLong.path}");
+          print("_photoDirLong.path :: ${tempPath}");
+          fetchData();
+        });
       }
+    });
 
-      return permissionGranted;
+    /* if (await storagePermission.isDenied) {
+      storagePermission.request().then((value) async {
+        if (await _photoDir.exists()) {
+          tempPath = _photoDir.path;
+          print("_photoDir.path :: ${_photoDir.path}");
+          print("_photoDir.path :: ${tempPath}");
+          fetchData();
+        } else if (await _photoDirLong.exists()) {
+          manageStoragePermission.request().then((value) async {
+            tempPath = _photoDirLong.path;
+            print("_photoDirLong.path :: ${_photoDirLong.path}");
+            print("_photoDirLong.path :: ${tempPath}");
+            fetchData();
+          });
+        }
+      });
+    } else {
+      fetchData();
+    }*/
   }
 
-  void getFiles() async {
-    isLoading = true;
-    Directory directory = Directory('/storage/emulated/0/');
-    if (await directory.exists()) {
-      List<FileSystemEntity> files = directory.listSync();
-      // Process the list of files
-    } else {
-      print('Directory does not exist');
-    }
-    String mp3Path = directory.toString();
-    print("mp3Path:: $mp3Path");
-    audioFiles = directory.listSync(recursive: true, followLinks: false);
-    print("list :: $audioFiles");
-    List<FileSystemEntity> _files;
-    List<FileSystemEntity> _songs = [];
-    // _files = directory.listSync(recursive: true, followLinks: false);
-    // for(FileSystemEntity entity in _files) {
-    //   String path = entity.path;
-    //   if(path.endsWith('.mp3'))
-    //     _songs.add(entity);
-    // }
-    // print(_songs);
-    // print(_songs.length);
-    isLoading = false;
+  fetchData() async {
+    datalist.clear();
+    print("path :: $tempPath");
+    finalDirectory = Directory(tempPath);
+    datalist = finalDirectory.listSync();
+    print(datalist);
+    update();
+    imageTap();
+  }
+
+  imageTap() {
+    listToShowAudio.clear();
+    listToShowVideo.clear();
+    listToShowVideoThumb.clear();
+    datalist.map((e) async {
+      if(e.path.toString().endsWith(".mp3")
+          || e.path.toString().endsWith(".aac")
+          || e.path.toString().endsWith(".Ogg Vorbis")
+          || e.path.toString().endsWith(".ALAC")
+          || e.path.toString().endsWith(".WAV")
+          || e.path.toString().endsWith(".AIFF")
+          || e.path.toString().endsWith(".DSD")
+          || e.path.toString().endsWith(".PCM")
+          || e.path.toString().endsWith(".FLAC")
+      ){
+        listToShowAudio.add(e);
+        isLoading = false;
+        update();
+      } else if(e.path.toString().endsWith(".mp4")
+          || e.path.toString().endsWith(".MOV")
+          || e.path.toString().endsWith(".AVI")
+          || e.path.toString().endsWith(".WMV")
+          || e.path.toString().endsWith(".AVCHD")
+          || e.path.toString().endsWith(".FLV")
+          || e.path.toString().endsWith(".F4V")
+          || e.path.toString().endsWith(".SWF")
+          || e.path.toString().endsWith(".MKV")
+          || e.path.toString().endsWith(".WEBM")
+          || e.path.toString().endsWith(".HTML5")
+      ){
+        listToShowVideoThumb.add(await videoThumb(path: e.path));
+        isLoading = false;
+        print("listToShowVideoThumb  :: ${listToShowVideoThumb.length}");
+        print("listToShowVideoThumb  :: ${listToShowVideoThumb}");
+        listToShowVideo.add(e);
+        update();
+      }
+    }).toList();
     update();
   }
+
+  videoThumb({required String path}) async {
+    final uint8list = await VideoThumbnail.thumbnailData(
+      video: path,
+      imageFormat: ImageFormat.JPEG,
+      maxWidth: 128,
+      quality: 25,
+    );
+    isLoading = false;
+    update();
+    return uint8list;
+  }
+
 }
