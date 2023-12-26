@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:video_player_demo/controller/audio_manager.dart';
+import 'package:video_player_demo/controller/home_controller.dart';
 import 'package:video_player_demo/screen/audio_screen.dart';
 import 'package:video_player_demo/screen/video_screen.dart';
 
@@ -10,6 +13,18 @@ class TabScreen extends StatefulWidget {
 }
 
 class _TabScreenState extends State<TabScreen> {
+
+  HomeController homeController = Get.put(HomeController());
+  AudioPlayerManager manager = AudioPlayerManager();
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    manager = AudioPlayerManager();
+    manager.init();
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -32,13 +47,19 @@ class _TabScreenState extends State<TabScreen> {
             ],
           ),
         ),
-        body: const TabBarView(
+        body: TabBarView(
           children: [
-            AudioScreen(),
-            VideoScreen(),
+            AudioScreen(manager: manager!),
+            const VideoScreen(),
           ],
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    manager.dispose();
+    super.dispose();
   }
 }

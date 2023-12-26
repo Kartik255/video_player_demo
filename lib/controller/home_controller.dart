@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:audio_session/audio_session.dart';
 import 'package:get/get.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
@@ -17,6 +19,9 @@ class HomeController extends GetxController {
   List<FileSystemEntity> listToShowAudio = [];
   List<FileSystemEntity> listToShowVideo = [];
   List<Uint8List> listToShowVideoThumb = [];
+  List<FileSystemEntity> audioFiles = [];
+  bool isPlaying = false;
+  final player = AudioPlayer();
 
   permissionManage() async {
     isLoading = true;
@@ -121,6 +126,24 @@ class HomeController extends GetxController {
     isLoading = false;
     update();
     return uint8list;
+  }
+
+  Future<void> initt() async {
+    // Inform the operating system of our app's audio attributes etc.
+    // We pick a reasonable default for an app that plays speech.
+    final session = await AudioSession.instance;
+    await session.configure(const AudioSessionConfiguration.speech());
+    // Listen to errors during playback.
+    player.playbackEventStream.listen((event) {}, onError: (Object e, StackTrace stackTrace) {
+      print('A stream error occurred: $e');
+    });
+    // Try to load audio from a source and catch any errors.
+    try {
+      // AAC example: https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.aac
+      await player.setAsset("assets/songs/PAISA - Seven Hundred Fifty (Official song )- kushal pokhrel(MP3_160K).mp3");
+    } catch (e) {
+      print("Error loading audio source: $e");
+    }
   }
 
 }
